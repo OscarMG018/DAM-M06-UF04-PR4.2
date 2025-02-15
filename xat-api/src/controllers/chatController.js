@@ -4,10 +4,11 @@ const Prompt = require('../models/Prompt');
 const { validateUUID } = require('../middleware/validators');
 const axios = require('axios');
 const { logger } = require('../config/logger');
+const Sentiment = require('../models/Sentiment');
 
 // Constants de configuració
 const OLLAMA_API_URL = process.env.CHAT_API_OLLAMA_URL || 'http://localhost:11434/api';
-const DEFAULT_OLLAMA_MODEL = process.env.CHAT_API_OLLAMA_MODEL || 'llama3:latest';
+const DEFAULT_OLLAMA_MODEL = process.env.CHAT_API_OLLAMA_MODEL || 'llama3.2:1b';
 
 /**
  * Retorna la llista de models disponibles a Ollama
@@ -376,9 +377,83 @@ const getConversation = async (req, res, next) => {
     }
 };
 
+/**
+ * Analitza el sentiment d'una frase
+ * @route POST /api/chat/sentiment-analysis
+*/
+const analizeSentiment = async (req, res) => {
+    try {
+        const { text, promptId } = req.body;
+
+        if (!text) {
+            return res.status(400).json({ message: 'Text is required for sentiment analysis' });
+        }
+
+        const model = DEFAULT_OLLAMA_MODEL;
+        const stream = false;
+
+        logger.debug('Starting sentiment analysis', { 
+            model, 
+            textLength: text.length,
+            promptId
+        });
+
+        const requestBody = {
+            model,
+            prompt: `Analyze the sentiment of this text and respond with only one word (positive/negative/neutral): "${text}"`,
+            stream
+        };
+
+        const response = await axios.post(`${OLLAMA_API_URL}/generate`, requestBody, {
+            timeout: 30000,
+            responseType: 'json'
+        });
+
+        const sentiment = response.data.response.trim().toLowerCase();
+        
+        // Validate sentiment value
+        if (!['positive', 'negative', 'neutral'].includes(sentiment)) {
+            throw new Error('Invalid sentiment response from model');
+        }
+
+        // Create sentiment record
+        const sentimentRecord = await Sentiment.create({
+            text,
+            sentiment,
+            model,
+            PromptId: promptId || null
+        });
+
+        logger.info('Sentiment analysis completed and stored', {
+            sentimentId: sentimentRecord.id,
+            sentiment,
+            promptId
+        });
+        
+        res.status(200).json({
+            id: sentimentRecord.id,
+            sentiment,
+            text,
+            model,
+            createdAt: sentimentRecord.createdAt
+        });
+    } catch (error) {
+        logger.error('Error in sentiment analysis', {
+            error: error.message,
+            stack: error.stack
+        });
+        res.status(500).json({ 
+            message: 'Error performing sentiment analysis',
+            error: error.message 
+        });
+    }
+};
+
+
 // Exportació de les funcions públiques
 module.exports = {
     registerPrompt,
     getConversation,
-    listOllamaModels
+    listOllamaModels,
+    analizeSentiment
 };

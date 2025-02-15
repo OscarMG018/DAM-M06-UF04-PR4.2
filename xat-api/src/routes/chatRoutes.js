@@ -1,6 +1,6 @@
 const express = require('express');
 const router = express.Router();
-const { registerPrompt, getConversation, listOllamaModels } = require('../controllers/chatController');
+const { registerPrompt, getConversation, listOllamaModels, analizeSentiment } = require('../controllers/chatController');
 
 /**
  * @swagger
@@ -74,5 +74,39 @@ router.get('/conversation/:id', getConversation);
  *         description: Error al recuperar models
  */
 router.get('/models', listOllamaModels);
+
+
+/**
+ * @swagger
+ * /api/chat/sentiment-analysis:
+ *   post:
+ *     summary: Analyze the sentiment of a given text
+ *     tags: [Sentiment]
+ *     requestBody:
+ *       required: true
+ *       content:
+ *         application/json:
+ *           schema:
+ *             type: object
+ *             properties:
+ *               text:
+ *                 type: string
+ *                 description: The text to analyze
+ *     responses:
+ *       200:
+ *         description: Sentiment analysis result
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: object
+ *               properties:
+ *                 sentiment:
+ *                   type: string
+ *                   description: The detected sentiment (e.g., positive, negative)
+ *       400:
+ *         description: Invalid input data
+ */
+router.post('/sentiment-analysis', analizeSentiment);
+
 
 module.exports = router;

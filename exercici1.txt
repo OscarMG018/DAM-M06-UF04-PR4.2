@@ -1,0 +1,127 @@
+Configuració i Estructura Bàsica:
+
+Per què és important organitzar el codi en una estructura de directoris com controllers/,
+routes/, models/, etc.? Quins avantatges ofereix aquesta organització?
+
+    Organitzar el codi en una estructura clara com controllers/, routes/, models/, etc.,
+    ajuda a mantenir el projecte net i escalable. Els avantatges principals són:
+        -Modularitat
+        -Llegibilitat 
+        -Facilitat de depuració
+        -Escalabilitat
+        -Separació de responsabilitats
+
+Analitzant el fitxer server.js, quina és la seqüència correcta per inicialitzar una aplicació Express?
+Per què és important l'ordre dels middlewares?
+
+    Configuració bàsica, Middlewares generals (logging, parsers...), Middlewares específics de l'aplicació, Definir les rutes de l'API, Iniciar el servidor
+
+Com gestiona el projecte les variables d'entorn? Quins avantatges ofereix usar dotenv respecte a hardcodejar els valors?
+
+    Els avantatges d'utilitzar dotenv són:
+        Seguretat: Les credencials sensibles no es guarden al codi font.
+        Flexibilitat: Permet diferents configuracions per diferents entorns.
+        Mantenibilitat: Centralitza la configuració en un sol lloc.
+
+
+API REST i Express:
+Observant chatRoutes.js, com s'implementa el routing en Express?
+Quina és la diferència entre els mètodes HTTP GET i POST i quan s'hauria d'usar cadascun?
+
+    defineixen utilitzant els mètodes HTTP corresponents (get, post, etc.)
+    Cada ruta especifica:
+        Path (URL)
+        Handler (funció controladora)
+        Mètode HTTP (GET, POST, etc.)
+    Diferència entre GET i POST:
+        GET: Consulta
+            - no te body
+            - els parametres van a la URL
+        POST: Creació o modificació
+            - els parametres s'envien al body
+
+En el fitxer chatController.js, per què és important separar la lògica del controlador
+de les rutes? Quins principis de disseny s'apliquen?
+
+    La separació de la lògica del controlador de les rutes és important per diversos principis de disseny clau:
+        -Principi de Responsabilitat Única
+        -Separació de Preocupacions 
+        -No Repetir codi
+        -Alta Cohesió i Baix Acoblament:
+        
+Com gestiona el projecte els errors HTTP? Analitza el middleware errorHandler.js i
+explica com centralitza la gestió d'errors.
+
+-------------------
+
+
+Documentació amb Swagger:
+Observant la configuració de Swagger a swagger.js i els comentaris a chatRoutes.js,
+com s'integra la documentació amb el codi? Quins beneficis aporta aquesta aproximació?
+
+------------------
+
+Com es documenten els diferents endpoints amb els decoradors de Swagger? Per què és important
+documentar els paràmetres d'entrada i sortida?
+
+    Per documentar els diferents endpoints amb els decoradors de Swagger, es poden utilitzar anotacions 
+    com @ApiOperation, @ApiParam, @ApiResponse, entre altres. Aquestes anotacions permeten descriure el 
+    comportament dels endpoints, els paràmetres d'entrada i les possibles respostes.
+    És important documentar els paràmetres d'entrada i sortida perquè permet als desenvolupadors i usuaris 
+    entendre clarament com interactuar amb l'API, quins tipus de dades s'esperen i quines respostes es poden 
+    obtenir. Això millora l'usabilitat, facilita la depuració i assegura que la implementació de l'API sigui
+    consistent i correcta.
+
+Com podem provar els endpoints directament des de la interfície de Swagger? Quins avantatges
+ofereix això durant el desenvolupament?
+
+    Per provar els endpoints des de la interfície de Swagger, l'usuari ha d'accedir a la documentació
+    generada, seleccionar un endpoint, introduir els paràmetres necessaris i prémer "Execute".
+    Això ofereix avantatges durant el desenvolupament, ja que permet provar ràpidament les API sense 
+    ecessitat de clients externs, verificar respostes en temps real i assegurar que la documentació és precisa.
+
+
+Base de Dades i Models:
+Analitzant els models Conversation.js i Prompt.js, com s'implementen les relacions entre models
+utilitzant Sequelize? Per què s'utilitza UUID com a clau primària?
+
+-------------------------
+
+Com gestiona el projecte les migracions i sincronització de la base de dades? Quins riscos
+té usar sync() en producció?
+
+--------------------
+
+Quins avantatges ofereix usar un ORM com Sequelize respecte a fer consultes SQL directes?
+
+    Un ORM com Sequelize ofereix avantatges com:
+        Abstracció: Simplifica la manipulació de bases de dades sense escriure SQL manualment.
+        Portabilitat: Compatible amb diferents bases de dades sense modificar el codi.
+        Seguretat: Prevenció d'SQL Injection amb queries parametritzades.
+        Mantenibilitat: Codi més net i estructurat amb models i relacions definides en objectes.
+        Automatització: Gestió de migracions i sincronització de l'esquema de la base de dades.
+
+
+Logging i Monitorització:
+Observant logger.js, com s'implementa el logging estructurat? Quins nivells de logging existeixen
+i quan s'hauria d'usar cadascun?
+
+-------------
+
+Per què és important tenir diferents transports de logging (consola, fitxer)? Com es configuren
+en el projecte?
+
+    Permeten flexibilitat i seguretat. La consola és útil en desenvolupament per veure logs en temps real, mentre que els fitxers conserven l'historial per anàlisi posterior. També es poden usar bases de dades o sistemes centralitzats
+    
+    const winston = require('winston');
+    const logger = winston.createLogger({
+        transports: [
+            new winston.transports.Console(),
+            new winston.transports.File({ filename: 'error.log', level: 'error' })
+        ]
+    });
+
+Com ajuda el logging a debugar problemes en producció? Quina informació crítica s'hauria de loguejar?
+
+    Permet rastrejar errors, detectar anomalies i reconstruir esdeveniments en cas de fallida.
+    Errors, excepcions, peticions d'usuari, respostes del servidor, canvis crítics d'estat i metadades rellevants (timestamps, ID d'usuari, etc.).
