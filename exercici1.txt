@@ -52,14 +52,30 @@ de les rutes? Quins principis de disseny s'apliquen?
 Com gestiona el projecte els errors HTTP? Analitza el middleware errorHandler.js i
 explica com centralitza la gestió d'errors.
 
--------------------
-
+    Utilitza un logger per documentar tots els errors amb detalls (missatge, stack trace, ruta, mètode).
+    Gestiona casos específics:
+        Errors de validació Sequelize (400 Bad Request)
+        Errors de clau única Sequelize (400 Bad Request)
+        Altres errors (500 Internal Server Error)
+    En mode desenvolupament mostra més detalls dels errors, mentre que en producció oculta informació sensible.
+    Aquest middleware actua com a punt únic de gestió d'errors, assegurant un tractament consistent i segur dels errors en tota l'aplicació.
 
 Documentació amb Swagger:
 Observant la configuració de Swagger a swagger.js i els comentaris a chatRoutes.js,
 com s'integra la documentació amb el codi? Quins beneficis aporta aquesta aproximació?
 
-------------------
+    swagger.js
+        -Defineix la metadata bàsica de l'API (títol, versió, descripció)
+        -Configura el servidor de desenvolupament
+        -Especifica on trobar la documentació (apis: ['./src/routes/*.js'])
+
+    chatRoutes.js
+    Utilitza comentaris JSDoc amb anotacions Swagger (@swagger) per documentar el comportament de l'API.
+
+    beneficis:
+        -Documentació viu amb el codi
+        -garanteix que la documentació i la implementació estejan sincronitzades
+        -facilita la depuració
 
 Com es documenten els diferents endpoints amb els decoradors de Swagger? Per què és important
 documentar els paràmetres d'entrada i sortida?
@@ -85,12 +101,43 @@ Base de Dades i Models:
 Analitzant els models Conversation.js i Prompt.js, com s'implementen les relacions entre models
 utilitzant Sequelize? Per què s'utilitza UUID com a clau primària?
 
--------------------------
+    Les relacions entre models s'implementen utilitzant els mètodes de Sequelize de la següent manera:
+    // Prompt -> Conversation (N:1)
+    Prompt.belongsTo(Conversation);
+    Conversation.hasMany(Prompt);
+
+    // Sentiment -> Prompt (1:1)
+    Sentiment.belongsTo(Prompt);
+    Prompt.hasOne(Sentiment);
+
+    Els UUIDs s'utilitzen per diversos beneficis:
+    -Evita col·lisions entre diferents instàncies/servidors
+    -Son més segurs que les claus primaries
+    -Facilita la distribució de dades entre múltiples servidors
+    -No revela informació sobre el volum de registres
 
 Com gestiona el projecte les migracions i sincronització de la base de dades? Quins riscos
 té usar sync() en producció?
 
---------------------
+    Observant la configuració, el projecte utilitza Sequelize per la gestió de la base de dades. Aquí hi ha alguns punts importants:
+    // Producció
+    const sequelize = new Sequelize(
+        process.env.MYSQL_DATABASE,
+        process.env.MYSQL_USER,
+        ...
+    );
+
+    // Test
+    const sequelize = new Sequelize(
+        process.env.MYSQL_TEST_DATABASE,
+        process.env.MYSQL_TEST_USER,
+        ...
+    );
+    Riscos d'usar sync() en producció:
+        -Pèrdua de dades: sync({force: true}) elimina i recrea les taules
+        -Inconsistència: No gestiona canvis complexos en l'esquema
+        -Concurrència: Pot causar problemes amb múltiples instàncies
+        -Control: No hi ha rollback ni control de versions
 
 Quins avantatges ofereix usar un ORM com Sequelize respecte a fer consultes SQL directes?
 
@@ -106,7 +153,10 @@ Logging i Monitorització:
 Observant logger.js, com s'implementa el logging estructurat? Quins nivells de logging existeixen
 i quan s'hauria d'usar cadascun?
 
--------------
+    Transports:
+        -Consola: Sempre actiu, amb colors
+        -Fitxer: Opcional, amb rotació diària i compressió
+    Nivells de Logging (de menys a més sever): debug, info, warn, error, fatalº
 
 Per què és important tenir diferents transports de logging (consola, fitxer)? Com es configuren
 en el projecte?
