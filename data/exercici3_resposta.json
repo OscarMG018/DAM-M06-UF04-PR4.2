@@ -1,1 +1,72 @@
-[]
+[
+  {
+    "error": "La resposta retornada no conté JSON"
+  },
+  {
+    "tipus": [
+      "Savanes, deserts"
+    ],
+    "regioGeografica": [
+      "Àfrica septentrional i central"
+    ],
+    "clima": [
+      "Clima àrid"
+    ]
+  },
+  {
+    "analisis": [
+      {
+        "imatge": {
+          "nom_fitxer": "badger.jpg"
+        },
+        "analisi": {
+          "nom_comu": "tètan",
+          "taxonomia": {
+            "classe": "mamífer",
+            "ordre": "Eulipotyphla",
+            "familia": "Mellivoridae"
+          },
+          "habitat": {
+            "tipus": [
+              "boscos"
+            ],
+            "regioGeografica": [
+              "Europa"
+            ],
+            "clima": [
+              "temperat"
+            ]
+          },
+          "dieta": {
+            "tipus": "carnívor",
+            "aliments_principals": [
+              "insectes, aranyes, rèptils i peixos"
+            ]
+          },
+          "caracteristiques_fisiques": {
+            "mida": {
+              "altura_mitjana_cm": "40-60 cm",
+              "pes_mitja_kg": "7-15 kg"
+            },
+            "colors_predominants": [
+              "negre, blanc i groc"
+            ],
+            "trets_distintius": [
+              "costelles de la cara",
+              "gruixuts llavis"
+            ]
+          },
+          "estat_conservacio": {
+            "classificacio_IUCN": "LC (menys preocupant)",
+            "amenaces_principals": [
+              "destrucció d'hàbitats"
+            ]
+          }
+        }
+      }
+    ]
+  },
+  {
+    "error": "La resposta retornada no conté JSON"
+  }
+]

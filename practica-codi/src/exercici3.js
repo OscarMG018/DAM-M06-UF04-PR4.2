@@ -11,7 +11,7 @@ const IMAGE_TYPES = ['.jpg', '.jpeg', '.png', '.gif'];
 const OLLAMA_URL = process.env.CHAT_API_OLLAMA_URL;
 const OLLAMA_MODEL = process.env.CHAT_API_OLLAMA_MODEL_VISION;
 
-const DIRECTORIES_TO_ANALIZE = 2;
+const DIRECTORIES_TO_ANALIZE = 2000;
 const OUTPUT_FILE_NAME = "exercici3_resposta.json"
 
 // Funció per llegir un fitxer i convertir-lo a Base64
@@ -41,8 +41,6 @@ async function queryOllama(base64Image, prompt) {
     try {
         // Add debug logging
         console.log('=== Debug Info ===');
-        console.log('Image size (bytes):', base64Image.length);
-        console.log('Prompt length:', prompt.length);
         console.log('Model being used:', OLLAMA_MODEL);
         
         // Test basic connection first
@@ -70,8 +68,6 @@ async function queryOllama(base64Image, prompt) {
                 });
                 
                 console.log('Response received. Status:', response.status);
-                console.log('Response type:', typeof response.data);
-                console.log('Response structure:', Object.keys(response.data));
                 
                 const data = response.data;
                 if (!data || !data.response) {
@@ -175,13 +171,70 @@ async function getAllImages() {
     return imageList;
 }
 
-function isJSON(str) {
-    try {
-        JSON.parse(str);
-        return true;
-    } catch (e) {
-        return false;
+function findJSON(str) {
+    let largestCandidate = "";
+    let largestParsed = null;
+
+    // Iterate over every character in the string
+    for (let i = 0; i < str.length; i++) {
+        // Only consider characters that could be the start of JSON
+        if (str[i] !== '{' && str[i] !== '[') continue;
+
+        let stack = [];
+        let inString = false;
+        let escaped = false;
+        
+        // Determine the initial expected closing bracket
+        stack.push(str[i] === '{' ? '}' : ']');
+
+        // Scan forward from the starting position
+        for (let j = i + 1; j < str.length; j++) {
+        let char = str[j];
+
+        // If inside a string literal, handle escape sequences and closing quotes
+        if (inString) {
+            if (escaped) {
+            escaped = false;
+            } else if (char === '\\') {
+            escaped = true;
+            } else if (char === '"') {
+            inString = false;
+            }
+            continue;
+        } else {
+            // Not in a string: check for string start, or opening/closing brackets
+            if (char === '"') {
+            inString = true;
+            } else if (char === '{' || char === '[') {
+            stack.push(char === '{' ? '}' : ']');
+            } else if (char === '}' || char === ']') {
+            if (stack.length === 0 || char !== stack[stack.length - 1]) {
+                // Mismatched bracket, so break out of the loop for this candidate
+                break;
+            }
+            stack.pop();
+            // When the stack is empty, we have a balanced candidate
+            if (stack.length === 0) {
+                const candidate = str.slice(i, j + 1);
+                try {
+                // Try parsing the candidate; if valid, update if it is larger than the current one.
+                const parsed = JSON.parse(candidate);
+                if (candidate.length > largestCandidate.length) {
+                    largestCandidate = candidate;
+                    largestParsed = parsed;
+                }
+                } catch (e) {
+                // Ignore parse errors and continue scanning
+                }
+                // We can break after finding a balanced candidate for this starting point.
+                break;
+            }
+            }
+        }
+        }
     }
+    
+    return largestParsed;
 }
 
 // Funció principal
@@ -198,19 +251,61 @@ async function main() {
     }
 
     const imageList = await getAllImages();
-    console.log(`S'han analitzat ${imageList.length} imatges`);
+    console.log("S'analitzaran un maxim de "+ DIRECTORIES_TO_ANALIZE  + " directoris");
+    console.log(`S'han trobat ${imageList.length} imatges`);
     const result = [];
 
-    const prompt = "Identify the type of animal in the image. Response by making a json with the following "
-        + "information: name(common/scientific name), taxonomy, habitat, diet, physical characteristics, endangerState";
-    
+    const prompt = "Analitza la imatge proporcionada i identifica l'animal que hi apareix. Retorna únicament la informació en format JSON segons l'estructura següent, sense cap text addicional."
+        + `{  
+            "analisis": [  
+                {  
+                    "imatge": {  
+                        "nom_fitxer": "nom_del_fitxer.jpg"  
+                    },  
+                    "analisi": {  
+                        "nom_comu": "nom comú de l'animal",  
+                        "nom_cientific": "nom científic si és conegut",  
+                        "taxonomia": {  
+                            "classe": "mamífer/au/rèptil/amfibi/peix",  
+                            "ordre": "ordre taxonòmic",  
+                            "familia": "família taxonòmica"  
+                        },  
+                        "habitat": {  
+                            "tipus": ["tipus d'hàbitats"],  
+                            "regioGeografica": ["regions on viu"],  
+                            "clima": ["tipus de climes"]  
+                        },  
+                        "dieta": {  
+                            "tipus": "carnívor/herbívor/omnívor",  
+                            "aliments_principals": ["llista d'aliments"]  
+                        },  
+                        "caracteristiques_fisiques": {  
+                            "mida": {  
+                                "altura_mitjana_cm": "altura mitjana",  
+                                "pes_mitja_kg": "pes mitjà"  
+                            },  
+                            "colors_predominants": ["colors"],  
+                            "trets_distintius": ["característiques"]  
+                        },  
+                        "estat_conservacio": {  
+                            "classificacio_IUCN": "estat",  
+                            "amenaces_principals": ["amenaces"]  
+                        }  
+                    }  
+                }  
+            ]  
+        }`
+    const length = imageList.length;
     for (const image of imageList) {
+        console.log(`Processant la imatge ${length - imageList.length + 1} de ${length}`);
         try {
             const response = await queryOllama(image.base64String, prompt);
-            if (response && isJSON(response)) {
-                result.push(JSON.parse(response));
+            jsonResponse = findJSON(response)
+            if (jsonResponse) {
+                result.push(jsonResponse);
             } else {
-                console.error(`La resposta retornada no és un JSON: ${response}`);
+                console.error(`La resposta retornada no conté JSON: ${response}`);
+                result.push({ error: "La resposta retornada no conté JSON" });
             }
         } catch (error) {
             console.error(`Error processant imatge ${image.fileName}:`, error);
