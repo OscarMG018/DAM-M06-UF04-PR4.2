@@ -30,31 +30,80 @@ async function queryOllama(base64Image, prompt) {
     const requestBody = {
         model: OLLAMA_MODEL,
         prompt: prompt,
-        images: [base64Image],
-        stream: false
+        images: [`${base64Image}`],
+        stream: false,
+        options: {
+            temperature: 0.7,
+            num_predict: 1024
+        }
     };
 
     try {
-        console.log('Enviant petició a Ollama...');
-        console.log(`URL: ${OLLAMA_URL}/api/generate`);
-        console.log('Model:', OLLAMA_MODEL);
+        // Add debug logging
+        console.log('=== Debug Info ===');
+        console.log('Image size (bytes):', base64Image.length);
+        console.log('Prompt length:', prompt.length);
+        console.log('Model being used:', OLLAMA_MODEL);
         
-        const response = await axios.post(`${OLLAMA_URL}/api/generate`, requestBody, {timeout: 1000000});
-        console.log('Resposta completa d\'Ollama:', response.data);
-        const data = response.data;
-        // Verificar si tenim una resposta vàlida
-        if (!data || !data.response) {
-            throw new Error('La resposta d\'Ollama no té el format esperat');
+        // Test basic connection first
+        try {
+            const versionCheck = await axios.get(`${OLLAMA_URL}/api/version`);
+            console.log('Ollama version:', versionCheck.data);
+        } catch (e) {
+            console.error('Failed basic connection test:', e.message);
         }
 
-        return data.response;
+        let retries = 3;
+        let lastError;
+        
+        while (retries > 0) {
+            try {
+                console.log(`Attempt ${4-retries}: Making request to Ollama...`);
+                const response = await axios.post(`${OLLAMA_URL}/api/generate`, requestBody, {
+                    timeout: 300000,
+                    maxBodyLength: Infinity,
+                    maxContentLength: Infinity,
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'Accept': 'application/json'
+                    }
+                });
+                
+                console.log('Response received. Status:', response.status);
+                console.log('Response type:', typeof response.data);
+                console.log('Response structure:', Object.keys(response.data));
+                
+                const data = response.data;
+                if (!data || !data.response) {
+                    console.error('Raw response:', JSON.stringify(data, null, 2));
+                    throw new Error('La resposta d\'Ollama no té el format esperat');
+                }
+                return data.response;
+            } catch (error) {
+                lastError = error;
+                console.error('Request error details:', {
+                    message: error.message,
+                    response: error.response?.data,
+                    status: error.response?.status
+                });
+                retries--;
+                if (retries > 0) {
+                    console.log(`Reintentant petició. Intents restants: ${retries}`);
+                    await new Promise(resolve => setTimeout(resolve, 2000));
+                }
+            }
+        }
+        
+        throw lastError;
     } catch (error) {
-        console.error('Error detallat en la petició a Ollama:', error);
+        //console.error('Error detallat en la petició a Ollama:', error);
         console.error('Detalls adicionals:', {
             url: `${OLLAMA_URL}/api/generate`,
             model: OLLAMA_MODEL,
             promptLength: prompt.length,
-            imageLength: base64Image.length
+            imageLength: base64Image.length,
+            errorMessage: error.message,
+            errorCode: error.code
         });
         throw error;
     }
