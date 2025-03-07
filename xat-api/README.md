@@ -144,3 +144,72 @@ L'API inclou gestió d'errors per:
 - Errors en el streaming
 
 Els errors retornen respostes JSON amb codis d'estat HTTP apropiats i missatges descriptius.
+
+## Error Handling
+
+The application implements a robust error handling system to provide clear, user-friendly error messages and implement resilience strategies:
+
+### Key Error Handling Features
+
+1. **Centralized Error Handler**
+   - All errors are processed through a unified error handling middleware
+   - Custom error types with specific HTTP status codes
+   - Development vs. production error details
+
+2. **User-Friendly Error Messages**
+   - Clear, actionable error messages for end users
+   - Technical details hidden in production but logged for debugging
+   - Translated error messages in Catalan
+
+3. **Retry Mechanisms**
+   - Automatic retries for network-related errors
+   - Exponential backoff with jitter to prevent thundering herd
+   - Configurable retry counts and delays
+
+4. **Model Validation**
+   - Verification of model existence before sending requests to Ollama
+   - Cache of available models to improve performance
+   - Clear error messages when models are not available
+
+5. **Database Connection Resilience**
+   - Retries for temporary database connection issues
+   - Graceful degradation when database is unavailable
+   - Proper connection pool management
+
+### Testing Error Handling
+
+You can run the model verification test with:
+
+```bash
+npm run test-models
+```
+
+This will:
+- Check if Ollama is available
+- List all available models
+- Verify if the configured model exists
+- Test the error handling for non-existent models
+
+### Common Error Types and Solutions
+
+| Error Type | Description | Solution |
+|------------|-------------|----------|
+| `model_unavailable` | The requested Ollama model is not available | Check model name or pull the model with `ollama pull <model_name>` |
+| `connection_failed` | Cannot connect to Ollama service | Verify Ollama is running and accessible at the configured URL |
+| `connection_error` | Database connection error | Check database credentials and ensure MySQL is running |
+| `validation_error` | Invalid input data | Check request parameters against API documentation |
+| `request_timeout` | Request took too long to process | Try with a smaller prompt or a lighter model |
+
+### Customizing Error Handling
+
+You can adjust error handling behavior through environment variables:
+
+```
+# Retry Configuration
+MAX_RETRIES=3                # Maximum number of retries for operations
+RETRY_DELAY_MS=1000          # Base delay between retries (ms)
+
+# Timeout Configuration
+REQUEST_TIMEOUT=30000        # Request timeout in milliseconds
+DB_CONNECTION_TIMEOUT=5000   # Database connection timeout
+```
